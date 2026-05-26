@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kangwei.expensetracker.data.db.relation.ExpenseWithDetails
 import com.kangwei.expensetracker.ui.components.*
 import java.text.SimpleDateFormat
 import java.util.*
