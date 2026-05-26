@@ -24,7 +24,10 @@ fun CategoriesScreen(innerPadding: PaddingValues, vm: CategoriesViewModel = view
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAdd = true }) {
+            FloatingActionButton(
+                onClick = { showAdd = true },
+                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = "Add category")
             }
         }

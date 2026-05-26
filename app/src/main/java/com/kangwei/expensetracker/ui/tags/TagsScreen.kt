@@ -29,7 +29,10 @@ fun TagsScreen(innerPadding: PaddingValues, vm: TagsViewModel = viewModel()) {
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAdd = true }) {
+            FloatingActionButton(
+                onClick = { showAdd = true },
+                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = "Add tag")
             }
         }
