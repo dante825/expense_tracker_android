@@ -12,6 +12,10 @@ interface ExpenseDao {
     @Query("SELECT * FROM expenses ORDER BY date DESC")
     fun getAllWithDetailsFlow(): Flow<List<ExpenseWithDetails>>
 
+    @Transaction
+    @Query("SELECT * FROM expenses ORDER BY date DESC")
+    suspend fun getAllWithDetailsList(): List<ExpenseWithDetails>
+
     @Insert
     suspend fun insert(expense: ExpenseEntity): Long
 

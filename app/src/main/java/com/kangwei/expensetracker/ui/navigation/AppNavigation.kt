@@ -5,12 +5,17 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import com.kangwei.expensetracker.ui.categories.CategoriesScreen
+import com.kangwei.expensetracker.ui.components.LocalCurrencyCode
 import com.kangwei.expensetracker.ui.dashboard.DashboardScreen
 import com.kangwei.expensetracker.ui.expenses.ExpensesScreen
 import com.kangwei.expensetracker.ui.recurring.RecurringScreen
+import com.kangwei.expensetracker.ui.settings.SettingsScreen
+import com.kangwei.expensetracker.ui.settings.SettingsViewModel
 import com.kangwei.expensetracker.ui.tags.TagsScreen
 
 sealed class Tab(val route: String, val label: String, val icon: ImageVector) {
@@ -19,9 +24,10 @@ sealed class Tab(val route: String, val label: String, val icon: ImageVector) {
     data object Categories : Tab("categories", "Categories", Icons.Filled.Folder)
     data object Recurring : Tab("recurring", "Recurring", Icons.Filled.Repeat)
     data object Tags : Tab("tags", "Tags", Icons.Filled.Label)
+    data object Settings : Tab("settings", "Settings", Icons.Filled.Settings)
 }
 
-private val tabs = listOf(Tab.Dashboard, Tab.Expenses, Tab.Categories, Tab.Recurring, Tab.Tags)
+private val tabs = listOf(Tab.Dashboard, Tab.Expenses, Tab.Categories, Tab.Recurring, Tab.Tags, Tab.Settings)
 
 @Composable
 fun AppNavigation() {
@@ -29,6 +35,10 @@ fun AppNavigation() {
     val currentBackStack by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStack?.destination?.route
 
+    val settingsVm: SettingsViewModel = viewModel()
+    val currencyCode by settingsVm.currencyCode.collectAsStateWithLifecycle()
+
+    CompositionLocalProvider(LocalCurrencyCode provides currencyCode) {
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -61,6 +71,8 @@ fun AppNavigation() {
             composable(Tab.Categories.route) { CategoriesScreen(innerPadding) }
             composable(Tab.Recurring.route) { RecurringScreen(innerPadding) }
             composable(Tab.Tags.route) { TagsScreen(innerPadding) }
+            composable(Tab.Settings.route) { SettingsScreen(innerPadding, settingsVm) }
         }
     }
+    } // CompositionLocalProvider
 }

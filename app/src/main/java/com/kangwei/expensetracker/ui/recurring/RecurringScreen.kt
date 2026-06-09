@@ -14,12 +14,14 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kangwei.expensetracker.ui.components.LocalCurrencyCode
 import com.kangwei.expensetracker.ui.components.formatCurrency
 import com.kangwei.expensetracker.ui.components.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecurringScreen(innerPadding: PaddingValues, vm: RecurringViewModel = viewModel()) {
+    val currencyCode = LocalCurrencyCode.current
     val recurrings by vm.recurrings.collectAsStateWithLifecycle()
     val categories by vm.categories.collectAsStateWithLifecycle()
     var showAdd by remember { mutableStateOf(false) }
@@ -79,7 +81,7 @@ fun RecurringScreen(innerPadding: PaddingValues, vm: RecurringViewModel = viewMo
                         )
                     }
                     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(formatCurrency(r.amount), style = MaterialTheme.typography.bodyMedium)
+                        Text(formatCurrency(r.amount, currencyCode), style = MaterialTheme.typography.bodyMedium)
                         OutlinedButton(
                             onClick = { vm.toggleActive(r) },
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)

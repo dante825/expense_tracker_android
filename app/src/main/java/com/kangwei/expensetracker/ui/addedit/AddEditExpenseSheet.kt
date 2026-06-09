@@ -1,14 +1,11 @@
 package com.kangwei.expensetracker.ui.addedit
 
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -17,11 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kangwei.expensetracker.data.db.relation.ExpenseWithDetails
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -44,19 +41,15 @@ fun AddEditExpenseSheet(
     val isIncome by vm.isIncome.collectAsStateWithLifecycle()
     val selectedCategoryId by vm.selectedCategoryId.collectAsStateWithLifecycle()
     val selectedTagIds by vm.selectedTagIds.collectAsStateWithLifecycle()
-    val receiptData by vm.receiptData.collectAsStateWithLifecycle()
+    val receiptPath by vm.receiptPath.collectAsStateWithLifecycle()
     val isValid by vm.isValid.collectAsStateWithLifecycle()
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showNewTagDialog by remember { mutableStateOf(false) }
     var newTagName by remember { mutableStateOf("") }
 
-    val context = LocalContext.current
-    val photoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-        uri?.let {
-            val bytes = context.contentResolver.openInputStream(it)?.readBytes()
-            vm.receiptData.value = bytes
-        }
+    val photoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let { vm.attachReceipt(it) }
     }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
@@ -81,7 +74,7 @@ fun AddEditExpenseSheet(
 
             OutlinedTextField(
                 value = amount,
-                onValueChange = { vm.amount.value = it },
+                onValueChange = { vm.onAmountChange(it) },
                 label = { Text("Amount") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
@@ -90,7 +83,7 @@ fun AddEditExpenseSheet(
 
             OutlinedTextField(
                 value = description,
-                onValueChange = { vm.description.value = it },
+                onValueChange = { vm.onDescriptionChange(it) },
                 label = { Text("Description") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -110,7 +103,7 @@ fun AddEditExpenseSheet(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("This is income", modifier = Modifier.weight(1f))
-                Switch(checked = isIncome, onCheckedChange = { vm.isIncome.value = it })
+                Switch(checked = isIncome, onCheckedChange = { vm.onIsIncomeChange(it) })
             }
 
             // Category dropdown
@@ -128,7 +121,7 @@ fun AddEditExpenseSheet(
                 ExposedDropdownMenu(expanded = catExpanded, onDismissRequest = { catExpanded = false }) {
                     categories.forEach { cat ->
                         DropdownMenuItem(text = { Text(cat.name) }, onClick = {
-                            vm.selectedCategoryId.value = cat.id; catExpanded = false
+                            vm.onCategorySelected(cat.id); catExpanded = false
                         })
                     }
                 }
@@ -141,7 +134,7 @@ fun AddEditExpenseSheet(
                     allTags.filter { it.id in selectedTagIds }.sortedBy { it.name }.forEach { tag ->
                         InputChip(
                             selected = true,
-                            onClick = { vm.selectedTagIds.value = selectedTagIds - tag.id },
+                            onClick = { vm.onTagToggled(tag.id, false) },
                             label = { Text(tag.name) },
                             trailingIcon = { Icon(Icons.Filled.Close, null, Modifier.size(16.dp)) }
                         )
@@ -158,7 +151,7 @@ fun AddEditExpenseSheet(
                 ExposedDropdownMenu(expanded = tagMenuExpanded, onDismissRequest = { tagMenuExpanded = false }) {
                     unselectedTags.forEach { tag ->
                         DropdownMenuItem(text = { Text(tag.name) }, onClick = {
-                            vm.selectedTagIds.value = selectedTagIds + tag.id; tagMenuExpanded = false
+                            vm.onTagToggled(tag.id, true); tagMenuExpanded = false
                         })
                     }
                     HorizontalDivider()
@@ -170,9 +163,7 @@ fun AddEditExpenseSheet(
 
             // Receipt
             Text("Receipt", style = MaterialTheme.typography.labelLarge)
-            val bitmap = receiptData?.let {
-                android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size)
-            }
+            val bitmap = receiptPath?.let { android.graphics.BitmapFactory.decodeFile(it) }
             if (bitmap != null) {
                 Image(
                     bitmap = bitmap.asImageBitmap(),
@@ -180,7 +171,7 @@ fun AddEditExpenseSheet(
                     modifier = Modifier.fillMaxWidth().heightIn(max = 160.dp)
                 )
                 OutlinedButton(
-                    onClick = { vm.receiptData.value = null },
+                    onClick = { vm.removeReceipt() },
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) { Text("Remove Receipt") }
             } else {
@@ -202,7 +193,7 @@ fun AddEditExpenseSheet(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { vm.date.value = it }
+                    datePickerState.selectedDateMillis?.let { vm.onDateChange(it) }
                     showDatePicker = false
                 }) { Text("OK") }
             }

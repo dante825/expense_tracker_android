@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,8 +19,15 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
-fun formatCurrency(amount: Double): String =
-    NumberFormat.getCurrencyInstance().format(amount)
+val LocalCurrencyCode = compositionLocalOf { "" }
+
+fun formatCurrency(amount: Double, currencyCode: String = ""): String {
+    val fmt = NumberFormat.getCurrencyInstance()
+    if (currencyCode.isNotEmpty()) {
+        try { fmt.currency = Currency.getInstance(currencyCode) } catch (_: IllegalArgumentException) { }
+    }
+    return fmt.format(amount)
+}
 
 fun formatDate(millis: Long): String =
     SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(millis))
@@ -52,6 +60,7 @@ fun TagChip(
 
 @Composable
 fun SummaryCard(title: String, amount: Double, color: Color, modifier: Modifier = Modifier) {
+    val currencyCode = LocalCurrencyCode.current
     Surface(
         shape = RoundedCornerShape(10.dp),
         color = color.copy(alpha = 0.1f),
@@ -64,7 +73,7 @@ fun SummaryCard(title: String, amount: Double, color: Color, modifier: Modifier 
             Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(4.dp))
             Text(
-                formatCurrency(amount),
+                formatCurrency(amount, currencyCode),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = color,
@@ -77,6 +86,7 @@ fun SummaryCard(title: String, amount: Double, color: Color, modifier: Modifier 
 
 @Composable
 fun ExpenseListItem(item: ExpenseWithDetails) {
+    val currencyCode = LocalCurrencyCode.current
     val amountColor = if (item.expense.isIncome) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurface
     Row(
         modifier = Modifier
@@ -113,7 +123,7 @@ fun ExpenseListItem(item: ExpenseWithDetails) {
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                formatCurrency(item.expense.amount),
+                formatCurrency(item.expense.amount, currencyCode),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 color = amountColor

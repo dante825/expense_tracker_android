@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kangwei.expensetracker.data.db.relation.ExpenseWithDetails
 import com.kangwei.expensetracker.ui.components.*
+import com.kangwei.expensetracker.ui.components.LocalCurrencyCode
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.min
@@ -36,6 +37,7 @@ fun DashboardScreen(innerPadding: PaddingValues, vm: DashboardViewModel = viewMo
     val period by vm.selectedPeriod.collectAsStateWithLifecycle()
     val selectedTagId by vm.selectedTagId.collectAsStateWithLifecycle()
 
+    val currencyCode = LocalCurrencyCode.current
     val income = expenses.filter { it.expense.isIncome }.sumOf { it.expense.amount }
     val spent = expenses.filter { !it.expense.isIncome }.sumOf { it.expense.amount }
     val net = income - spent
@@ -103,7 +105,7 @@ fun DashboardScreen(innerPadding: PaddingValues, vm: DashboardViewModel = viewMo
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 StatTile("Transactions", "${expenses.size}", Modifier.weight(1f))
-                StatTile("Avg / entry", if (avg > 0) formatCurrency(avg) else "—", Modifier.weight(1f))
+                StatTile("Avg / entry", if (avg > 0) formatCurrency(avg, currencyCode) else "—", Modifier.weight(1f))
                 if (savingsRate != null) {
                     StatTile(
                         "Savings rate",

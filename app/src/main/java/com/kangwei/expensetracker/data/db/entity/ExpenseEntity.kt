@@ -22,14 +22,6 @@ data class ExpenseEntity(
     val date: Long,
     val isIncome: Boolean,
     val createdAt: Long,
-    val receiptData: ByteArray? = null,
+    val receiptPath: String? = null,
     val categoryId: Long
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is ExpenseEntity) return false
-        return id == other.id
-    }
-
-    override fun hashCode(): Int = id.hashCode()
-}
+)

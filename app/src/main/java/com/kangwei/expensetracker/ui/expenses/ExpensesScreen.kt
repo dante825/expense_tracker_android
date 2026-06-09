@@ -17,6 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kangwei.expensetracker.data.db.relation.ExpenseWithDetails
 import com.kangwei.expensetracker.ui.addedit.AddEditExpenseSheet
 import com.kangwei.expensetracker.ui.components.ExpenseListItem
+import com.kangwei.expensetracker.ui.components.LocalCurrencyCode
 import com.kangwei.expensetracker.ui.components.formatCurrency
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,6 +31,7 @@ fun ExpensesScreen(innerPadding: PaddingValues, vm: ExpensesViewModel = viewMode
     val selectedTagId by vm.selectedTagId.collectAsStateWithLifecycle()
     val entryType by vm.entryTypeFilter.collectAsStateWithLifecycle()
 
+    val currencyCode = LocalCurrencyCode.current
     var showAdd by remember { mutableStateOf(false) }
     var editTarget by remember { mutableStateOf<ExpenseWithDetails?>(null) }
 
@@ -103,8 +105,8 @@ fun ExpensesScreen(innerPadding: PaddingValues, vm: ExpensesViewModel = viewMode
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Income: ${formatCurrency(filteredIncome)}", color = Color(0xFF2E7D32), style = MaterialTheme.typography.labelMedium)
-                        Text("Spent: ${formatCurrency(filteredSpent)}", color = Color(0xFFC62828), style = MaterialTheme.typography.labelMedium)
+                        Text("Income: ${formatCurrency(filteredIncome, currencyCode)}", color = Color(0xFF2E7D32), style = MaterialTheme.typography.labelMedium)
+                        Text("Spent: ${formatCurrency(filteredSpent, currencyCode)}", color = Color(0xFFC62828), style = MaterialTheme.typography.labelMedium)
                     }
                     HorizontalDivider()
                 }

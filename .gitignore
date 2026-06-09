@@ -6,6 +6,11 @@ app/build/
 # Local SDK path (machine-specific)
 local.properties
 
+# Signing — never commit credentials or keystores
+keystore.properties
+*.jks
+*.keystore
+
 # IDE
 .idea/
 *.iml

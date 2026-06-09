@@ -1,6 +1,7 @@
 package com.kangwei.expensetracker.ui.addedit
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.kangwei.expensetracker.ExpenseTrackerApp
@@ -9,8 +10,11 @@ import com.kangwei.expensetracker.data.db.entity.ExpenseEntity
 import com.kangwei.expensetracker.data.db.entity.ExpenseTagCrossRef
 import com.kangwei.expensetracker.data.db.entity.TagEntity
 import com.kangwei.expensetracker.data.db.relation.ExpenseWithDetails
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.io.File
+import java.util.UUID
 
 class AddEditExpenseViewModel(app: Application) : AndroidViewModel(app) {
     private val db = (app as ExpenseTrackerApp).database
@@ -23,45 +27,83 @@ class AddEditExpenseViewModel(app: Application) : AndroidViewModel(app) {
         .getAllFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    var amount = MutableStateFlow("")
-    var description = MutableStateFlow("")
-    var date = MutableStateFlow(System.currentTimeMillis())
-    var isIncome = MutableStateFlow(false)
-    var selectedCategoryId = MutableStateFlow<Long?>(null)
-    var selectedTagIds = MutableStateFlow<Set<Long>>(emptySet())
-    var receiptData = MutableStateFlow<ByteArray?>(null)
+    private val _amount = MutableStateFlow("")
+    val amount: StateFlow<String> = _amount.asStateFlow()
+
+    private val _description = MutableStateFlow("")
+    val description: StateFlow<String> = _description.asStateFlow()
+
+    private val _date = MutableStateFlow(System.currentTimeMillis())
+    val date: StateFlow<Long> = _date.asStateFlow()
+
+    private val _isIncome = MutableStateFlow(false)
+    val isIncome: StateFlow<Boolean> = _isIncome.asStateFlow()
+
+    private val _selectedCategoryId = MutableStateFlow<Long?>(null)
+    val selectedCategoryId: StateFlow<Long?> = _selectedCategoryId.asStateFlow()
+
+    private val _selectedTagIds = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedTagIds: StateFlow<Set<Long>> = _selectedTagIds.asStateFlow()
+
+    private val _receiptPath = MutableStateFlow<String?>(null)
+    val receiptPath: StateFlow<String?> = _receiptPath.asStateFlow()
 
     private var editingId: Long? = null
 
     fun loadExisting(item: ExpenseWithDetails) {
         editingId = item.expense.id
-        amount.value = item.expense.amount.toString()
-        description.value = item.expense.description
-        date.value = item.expense.date
-        isIncome.value = item.expense.isIncome
-        selectedCategoryId.value = item.category?.id
-        selectedTagIds.value = item.tags.map { it.id }.toSet()
-        receiptData.value = item.expense.receiptData
+        _amount.value = item.expense.amount.toString()
+        _description.value = item.expense.description
+        _date.value = item.expense.date
+        _isIncome.value = item.expense.isIncome
+        _selectedCategoryId.value = item.category?.id
+        _selectedTagIds.value = item.tags.map { it.id }.toSet()
+        _receiptPath.value = item.expense.receiptPath
     }
 
-    val isValid: StateFlow<Boolean> = combine(amount, selectedCategoryId) { amt, catId ->
+    fun onAmountChange(v: String) { _amount.value = v }
+    fun onDescriptionChange(v: String) { _description.value = v }
+    fun onDateChange(v: Long) { _date.value = v }
+    fun onIsIncomeChange(v: Boolean) { _isIncome.value = v }
+    fun onCategorySelected(id: Long) { _selectedCategoryId.value = id }
+    fun onTagToggled(id: Long, selected: Boolean) {
+        _selectedTagIds.value = if (selected) _selectedTagIds.value + id else _selectedTagIds.value - id
+    }
+
+    fun attachReceipt(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val app = getApplication<Application>()
+            val dir = File(app.filesDir, "receipts").also { it.mkdirs() }
+            val file = File(dir, "${UUID.randomUUID()}.jpg")
+            app.contentResolver.openInputStream(uri)?.use { it.copyTo(file.outputStream()) }
+            _receiptPath.value?.let { File(it).delete() }
+            _receiptPath.value = file.absolutePath
+        }
+    }
+
+    fun removeReceipt() {
+        _receiptPath.value?.let { File(it).delete() }
+        _receiptPath.value = null
+    }
+
+    val isValid: StateFlow<Boolean> = combine(_amount, _selectedCategoryId) { amt, catId ->
         amt.toDoubleOrNull() != null && catId != null
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun save(onDone: () -> Unit) {
-        val amountVal = amount.value.toDoubleOrNull() ?: return
-        val catId = selectedCategoryId.value ?: return
+        val amountVal = _amount.value.toDoubleOrNull() ?: return
+        val catId = _selectedCategoryId.value ?: return
         viewModelScope.launch {
             val expenseId = if (editingId != null) {
                 db.expenseDao().update(
                     ExpenseEntity(
                         id = editingId!!,
                         amount = amountVal,
-                        description = description.value,
-                        date = date.value,
-                        isIncome = isIncome.value,
+                        description = _description.value,
+                        date = _date.value,
+                        isIncome = _isIncome.value,
                         createdAt = System.currentTimeMillis(),
-                        receiptData = receiptData.value,
+                        receiptPath = _receiptPath.value,
                         categoryId = catId
                     )
                 )
@@ -70,17 +112,17 @@ class AddEditExpenseViewModel(app: Application) : AndroidViewModel(app) {
                 db.expenseDao().insert(
                     ExpenseEntity(
                         amount = amountVal,
-                        description = description.value,
-                        date = date.value,
-                        isIncome = isIncome.value,
+                        description = _description.value,
+                        date = _date.value,
+                        isIncome = _isIncome.value,
                         createdAt = System.currentTimeMillis(),
-                        receiptData = receiptData.value,
+                        receiptPath = _receiptPath.value,
                         categoryId = catId
                     )
                 )
             }
             db.expenseDao().deleteAllTagsForExpense(expenseId)
-            selectedTagIds.value.forEach { tagId ->
+            _selectedTagIds.value.forEach { tagId ->
                 db.expenseDao().insertCrossRef(ExpenseTagCrossRef(expenseId, tagId))
             }
             onDone()
@@ -95,7 +137,7 @@ class AddEditExpenseViewModel(app: Application) : AndroidViewModel(app) {
                 it.name.equals(trimmed, ignoreCase = true)
             }
             val id = existing?.id ?: db.tagDao().insert(TagEntity(name = trimmed))
-            selectedTagIds.value = selectedTagIds.value + id
+            _selectedTagIds.value = _selectedTagIds.value + id
         }
     }
 }

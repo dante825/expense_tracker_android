@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kangwei.expensetracker.data.db.entity.CategoryEntity
+import com.kangwei.expensetracker.ui.components.LocalCurrencyCode
 import com.kangwei.expensetracker.ui.components.formatCurrency
 
 @Composable
@@ -55,6 +56,7 @@ fun CategoriesScreen(innerPadding: PaddingValues, vm: CategoriesViewModel = view
 
 @Composable
 fun CategoryItem(category: CategoryEntity, vm: CategoriesViewModel) {
+    val currencyCode = LocalCurrencyCode.current
     var monthSpent by remember { mutableDoubleStateOf(0.0) }
     var editingBudget by remember { mutableStateOf(false) }
     var budgetText by remember { mutableStateOf("") }
@@ -82,8 +84,8 @@ fun CategoryItem(category: CategoryEntity, vm: CategoriesViewModel) {
             )
             Spacer(Modifier.height(2.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Spent: ${formatCurrency(monthSpent)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("of ${formatCurrency(category.budgetLimit)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Spent: ${formatCurrency(monthSpent, currencyCode)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("of ${formatCurrency(category.budgetLimit, currencyCode)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
