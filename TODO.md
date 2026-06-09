@@ -22,7 +22,7 @@
 - [x] Verify `android:allowBackup` behaviour — add a `fullBackupContent` XML descriptor to `AndroidManifest.xml` to explicitly control which files are included in Auto Backup (exclude the raw DB if you implement file-based receipt storage)
 
 ## Play Store admin (no code required)
-- [ ] Write and host a Privacy Policy — required because the app declares `READ_MEDIA_IMAGES`; add the URL to the Play Console listing
+- [x] Write and host a Privacy Policy — required because the app declares `READ_MEDIA_IMAGES`; add the URL to the Play Console listing (hosted at https://github.com/kangwei/expense_tracker_android/blob/main/PRIVACY_POLICY.md)
 - [ ] Create store listing assets — icon (512×512), feature graphic (1024×500), at least 2 phone screenshots per supported screen size
 - [ ] Complete content rating questionnaire in Play Console
 - [x] Configure release signing — add a `signingConfigs` block in `app/build.gradle.kts` for the release build type (or use Play App Signing)
